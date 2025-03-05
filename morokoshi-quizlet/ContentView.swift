@@ -20,6 +20,7 @@ class QuizViewModel: ObservableObject {
     @Published var userInput: String = ""
     @Published var showMultipleChoice: Bool = true
     @Published var score: Int = 0
+    @Published var feedbackMessage: String = ""
 
     init(questions: [Question]) {
         self.questions = questions
@@ -34,11 +35,12 @@ class QuizViewModel: ObservableObject {
         guard let currentQuestion = currentQuestion else { return }
         if answer.lowercased() == currentQuestion.correctAnswer.lowercased() {
             score += 1
-            nextQuestion()
+            feedbackMessage = "正解！"
         } else {
             incorrectQuestions.append(currentQuestion)
-            nextQuestion()
+            feedbackMessage = "不正解！ 正しい答えは: \(currentQuestion.correctAnswer)"
         }
+        nextQuestion()
     }
 
     func nextQuestion() {
@@ -46,7 +48,6 @@ class QuizViewModel: ObservableObject {
         showMultipleChoice.toggle()
 
         if showMultipleChoice == false {
-            // Keep the current question for the second phase
             return
         }
 
@@ -57,7 +58,6 @@ class QuizViewModel: ObservableObject {
             incorrectQuestions = []
             currentQuestionIndex = 0
         } else {
-            // All questions answered correctly
             questions = []
         }
     }
@@ -71,7 +71,7 @@ struct QuizView: View {
     ])
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack {
                 if let question = viewModel.currentQuestion {
                     Text(question.questionText)
@@ -92,18 +92,25 @@ struct QuizView: View {
                             }
                         }
                     } else {
-                        TextField("答えを入力してください", text: $viewModel.userInput, onCommit: {
+                        TextField("答えを入力してください", text: $viewModel.userInput)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .padding()
+                        Button("送信") {
                             viewModel.checkAnswer(viewModel.userInput)
-                        })
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
                         .padding()
+                        .background(Color.green)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
                     }
+                    Text(viewModel.feedbackMessage)
+                        .foregroundColor(.red)
+                        .padding()
                 } else {
                     Text("すべての問題を終了しました！\nスコア: \(viewModel.score)")
                         .font(.title)
                         .multilineTextAlignment(.center)
                 }
-
                 Spacer()
             }
             .navigationTitle("学習モード")
@@ -111,5 +118,3 @@ struct QuizView: View {
         }
     }
 }
-
-
