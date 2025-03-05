@@ -41,6 +41,7 @@ class QuizViewModel: ObservableObject {
             feedbackMessage = "不正解！\nあなたの答えは：\(answer)\n正しい答えは: \(currentQuestion.correctAnswer)"
             questionQueue.append(questionQueue.removeFirst())
         }
+        userInput = ""
     }
 
     func checkInputAnswer(_ answer: String) {
@@ -54,6 +55,7 @@ class QuizViewModel: ObservableObject {
             feedbackMessage = "不正解！\nあなたの答えは：\(answer)\n正しい答えは: \(currentQuestion.correctAnswer)"
             questionQueue.append(questionQueue.removeFirst())
         }
+        userInput = ""
     }
 }
 
@@ -93,6 +95,7 @@ struct QuizView: View {
                     } else {
                         TextField("答えを入力してください", text: $viewModel.userInput)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .autocapitalization(.none)
                             .padding()
                         Button(action: {
                             viewModel.checkInputAnswer(viewModel.userInput)
