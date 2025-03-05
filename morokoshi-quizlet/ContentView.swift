@@ -15,7 +15,7 @@ struct Question {
 
 class QuizViewModel: ObservableObject {
     @Published var questions: [Question]
-    @Published var incorrectQuestions: [Question] = []
+    @Published var incorrectQuestionsQueue: [Question] = []
     @Published var currentQuestionIndex: Int = 0
     @Published var userInput: String = ""
     @Published var showMultipleChoice: Bool = true
@@ -37,8 +37,8 @@ class QuizViewModel: ObservableObject {
             score += 1
             feedbackMessage = "正解！"
         } else {
-            incorrectQuestions.append(currentQuestion)
-            feedbackMessage = "不正解！ 正しい答えは: \(currentQuestion.correctAnswer)"
+            incorrectQuestionsQueue.append(currentQuestion)
+            feedbackMessage = "不正解！\nあなたの答えは：\(answer)\n正しい答えは: \(currentQuestion.correctAnswer)"
         }
         nextQuestion()
     }
@@ -53,10 +53,10 @@ class QuizViewModel: ObservableObject {
 
         if currentQuestionIndex < questions.count - 1 {
             currentQuestionIndex += 1
-        } else if !incorrectQuestions.isEmpty {
-            questions = incorrectQuestions
-            incorrectQuestions = []
-            currentQuestionIndex = 0
+        } else if !incorrectQuestionsQueue.isEmpty {
+            questions.append(contentsOf: incorrectQuestionsQueue)
+            incorrectQuestionsQueue = []
+            currentQuestionIndex += 1
         } else {
             questions = []
         }
@@ -65,9 +65,15 @@ class QuizViewModel: ObservableObject {
 
 struct QuizView: View {
     @StateObject private var viewModel = QuizViewModel(questions: [
-        Question(questionText: "Swiftの変数を宣言するキーワードは？", choices: ["var", "let", "const", "def"], correctAnswer: "var"),
-        Question(questionText: "Swiftで定数を宣言するキーワードは？", choices: ["var", "let", "static", "const"], correctAnswer: "let"),
-        Question(questionText: "Swiftのプロトコルは何を定義するためのものですか？", choices: [], correctAnswer: "仕様や契約")
+        Question(
+            questionText: "Swiftの変数を宣言するキーワードは？",
+            choices: ["var", "let", "const", "def"], correctAnswer: "var"),
+        Question(
+            questionText: "Swiftで定数を宣言するキーワードは？",
+            choices: ["var", "let", "static", "const"], correctAnswer: "let"),
+        Question(
+            questionText: "Swiftのプロトコルは何を定義するためのものですか？", choices: [],
+            correctAnswer: "仕様や契約"),
     ])
 
     var body: some View {
@@ -78,32 +84,35 @@ struct QuizView: View {
                         .font(.title)
                         .padding()
 
-                    if viewModel.showMultipleChoice && !question.choices.isEmpty {
-                        ForEach(question.choices, id: \ .self) { choice in
+                    if viewModel.showMultipleChoice && !question.choices.isEmpty
+                    {
+                        ForEach(question.choices, id: \.self) { choice in
                             Button(action: {
                                 viewModel.checkAnswer(choice)
                             }) {
                                 Text(choice)
                                     .padding()
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(8)
-                                    .padding(.horizontal)
                             }
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
                         }
                     } else {
                         TextField("答えを入力してください", text: $viewModel.userInput)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .padding()
-                        Button("送信") {
+                        Button(action: {
                             viewModel.checkAnswer(viewModel.userInput)
+                        }) {
+                            Text("送信")
+                                .padding()
                         }
-                        .padding()
                         .background(Color.green)
                         .foregroundColor(.white)
                         .cornerRadius(8)
                     }
                     Text(viewModel.feedbackMessage)
+                        .multilineTextAlignment(.center)
                         .foregroundColor(.red)
                         .padding()
                 } else {
