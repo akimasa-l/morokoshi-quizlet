@@ -16,12 +16,12 @@ struct Question {
 class QuizViewModel: ObservableObject {
     @Published var questionQueue: [Question]
     @Published var userInput: String = ""
-    @Published var showMultipleChoice: Bool = true
+    @Published var isMultipleChoicePhase: Bool = true
     @Published var score: Int = 0
     @Published var feedbackMessage: String = ""
 
     init(questions: [Question]) {
-        self.questionQueue = questions.shuffled()
+        self.questionQueue = questions//.shuffled()
     }
 
     var currentQuestion: Question? {
@@ -34,17 +34,16 @@ class QuizViewModel: ObservableObject {
             score += 1
             feedbackMessage = "正解！"
             questionQueue.removeFirst()
+            isMultipleChoicePhase = true
         } else {
-            feedbackMessage =
-                "不正解！\nあなたの答えは：\(answer)\n正しい答えは: \(currentQuestion.correctAnswer)"
+            feedbackMessage = "不正解！\nあなたの答えは：\(answer)\n正しい答えは: \(currentQuestion.correctAnswer)"
             questionQueue.append(questionQueue.removeFirst())
+            isMultipleChoicePhase = true
         }
-        nextQuestion()
     }
 
-    func nextQuestion() {
-        userInput = ""
-        showMultipleChoice.toggle()
+    func moveToInputPhase() {
+        isMultipleChoicePhase = false
     }
 }
 
@@ -69,11 +68,13 @@ struct QuizView: View {
                         .font(.title)
                         .padding()
 
-                    if viewModel.showMultipleChoice && !question.choices.isEmpty
-                    {
-                        ForEach(question.choices, id: \.self) { choice in
+                    if viewModel.isMultipleChoicePhase && !question.choices.isEmpty {
+                        ForEach(question.choices, id: \ .self) { choice in
                             Button(action: {
                                 viewModel.checkAnswer(choice)
+                                if choice == question.correctAnswer {
+                                    viewModel.moveToInputPhase()
+                                }
                             }) {
                                 Text(choice)
                                     .padding()
