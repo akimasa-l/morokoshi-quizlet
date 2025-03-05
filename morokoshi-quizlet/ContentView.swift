@@ -16,6 +16,7 @@ struct Question {
 
 class QuizViewModel: ObservableObject {
     @Published var questionQueue: [Question]
+    @Published var completedQuestions: [Question] = []
     @Published var userInput: String = ""
     @Published var score: Int = 0
     @Published var feedbackMessage: String = ""
@@ -47,6 +48,7 @@ class QuizViewModel: ObservableObject {
         if answer.lowercased() == currentQuestion.correctAnswer.lowercased() {
             score += 1
             feedbackMessage = "正解！"
+            completedQuestions.append(currentQuestion)
             questionQueue.removeFirst()
         } else {
             feedbackMessage = "不正解！\nあなたの答えは：\(answer)\n正しい答えは: \(currentQuestion.correctAnswer)"
@@ -107,9 +109,25 @@ struct QuizView: View {
                         .foregroundColor(.red)
                         .padding()
                 } else {
-                    Text("すべての問題を終了しました！\nスコア: \(viewModel.score)")
+                    Text("復習セクション")
                         .font(.title)
-                        .multilineTextAlignment(.center)
+                        .padding()
+                    ScrollView {
+                        LazyVStack {
+                            ForEach(viewModel.completedQuestions, id: \ .questionText) { question in
+                                VStack(alignment: .leading) {
+                                    Text(question.questionText)
+                                        .font(.headline)
+                                    Text("正解: \(question.correctAnswer)")
+                                        .foregroundColor(.gray)
+                                }
+                                .padding()
+                                .background(Color.yellow.opacity(0.3))
+                                .cornerRadius(10)
+                            }
+                        }
+                        .padding()
+                    }
                 }
                 Spacer()
             }
