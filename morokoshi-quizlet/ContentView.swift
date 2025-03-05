@@ -11,39 +11,47 @@ struct Question {
     let questionText: String
     let choices: [String]
     let correctAnswer: String
+    var multipleChoiceCorrect: Bool = false
 }
 
 class QuizViewModel: ObservableObject {
     @Published var questionQueue: [Question]
     @Published var userInput: String = ""
-    @Published var isMultipleChoicePhase: Bool = true
     @Published var score: Int = 0
     @Published var feedbackMessage: String = ""
 
     init(questions: [Question]) {
-        self.questionQueue = questions//.shuffled()
+        self.questionQueue = questions.shuffled()
     }
 
     var currentQuestion: Question? {
         return questionQueue.first
     }
 
-    func checkAnswer(_ answer: String) {
+    func checkMultipleChoiceAnswer(_ answer: String) {
+        guard var currentQuestion = currentQuestion else { return }
+        if answer.lowercased() == currentQuestion.correctAnswer.lowercased() {
+            score += 1
+            feedbackMessage = "正解！"
+            currentQuestion.multipleChoiceCorrect = true
+            questionQueue.removeFirst()
+            questionQueue.append(currentQuestion)
+        } else {
+            feedbackMessage = "不正解！\nあなたの答えは：\(answer)\n正しい答えは: \(currentQuestion.correctAnswer)"
+            questionQueue.append(questionQueue.removeFirst())
+        }
+    }
+
+    func checkInputAnswer(_ answer: String) {
         guard let currentQuestion = currentQuestion else { return }
         if answer.lowercased() == currentQuestion.correctAnswer.lowercased() {
             score += 1
             feedbackMessage = "正解！"
             questionQueue.removeFirst()
-            isMultipleChoicePhase = true
         } else {
             feedbackMessage = "不正解！\nあなたの答えは：\(answer)\n正しい答えは: \(currentQuestion.correctAnswer)"
             questionQueue.append(questionQueue.removeFirst())
-            isMultipleChoicePhase = true
         }
-    }
-
-    func moveToInputPhase() {
-        isMultipleChoicePhase = false
     }
 }
 
@@ -68,13 +76,10 @@ struct QuizView: View {
                         .font(.title)
                         .padding()
 
-                    if viewModel.isMultipleChoicePhase && !question.choices.isEmpty {
+                    if !question.multipleChoiceCorrect && !question.choices.isEmpty {
                         ForEach(question.choices, id: \ .self) { choice in
                             Button(action: {
-                                viewModel.checkAnswer(choice)
-                                if choice == question.correctAnswer {
-                                    viewModel.moveToInputPhase()
-                                }
+                                viewModel.checkMultipleChoiceAnswer(choice)
                             }) {
                                 Text(choice)
                                     .padding()
@@ -88,7 +93,7 @@ struct QuizView: View {
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .padding()
                         Button(action: {
-                            viewModel.checkAnswer(viewModel.userInput)
+                            viewModel.checkInputAnswer(viewModel.userInput)
                         }) {
                             Text("送信")
                                 .padding()
