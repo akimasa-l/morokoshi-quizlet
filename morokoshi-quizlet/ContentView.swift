@@ -14,21 +14,18 @@ struct Question {
 }
 
 class QuizViewModel: ObservableObject {
-    @Published var questions: [Question]
-    @Published var incorrectQuestionsQueue: [Question] = []
-    @Published var currentQuestionIndex: Int = 0
+    @Published var questionQueue: [Question]
     @Published var userInput: String = ""
     @Published var showMultipleChoice: Bool = true
     @Published var score: Int = 0
     @Published var feedbackMessage: String = ""
 
     init(questions: [Question]) {
-        self.questions = questions
+        self.questionQueue = questions.shuffled()
     }
 
     var currentQuestion: Question? {
-        guard currentQuestionIndex < questions.count else { return nil }
-        return questions[currentQuestionIndex]
+        return questionQueue.first
     }
 
     func checkAnswer(_ answer: String) {
@@ -36,48 +33,29 @@ class QuizViewModel: ObservableObject {
         if answer.lowercased() == currentQuestion.correctAnswer.lowercased() {
             score += 1
             feedbackMessage = "正解！"
+            questionQueue.removeFirst()
         } else {
-            incorrectQuestionsQueue.append(currentQuestion)
             feedbackMessage = "不正解！\nあなたの答えは：\(answer)\n正しい答えは: \(currentQuestion.correctAnswer)"
+            questionQueue.append(questionQueue.removeFirst())
         }
         nextQuestion()
     }
-
+    
     func nextQuestion() {
         userInput = ""
         showMultipleChoice.toggle()
-
-        if showMultipleChoice == false {
-            return
-        }
-
-        if currentQuestionIndex < questions.count - 1 {
-            currentQuestionIndex += 1
-        } else if !incorrectQuestionsQueue.isEmpty {
-            questions.append(contentsOf: incorrectQuestionsQueue)
-            incorrectQuestionsQueue = []
-            currentQuestionIndex += 1
-        } else {
-            questions = []
-        }
     }
 }
 
 struct QuizView: View {
     @StateObject private var viewModel = QuizViewModel(questions: [
-        Question(
-            questionText: "Swiftの変数を宣言するキーワードは？",
-            choices: ["var", "let", "const", "def"], correctAnswer: "var"),
-        Question(
-            questionText: "Swiftで定数を宣言するキーワードは？",
-            choices: ["var", "let", "static", "const"], correctAnswer: "let"),
-        Question(
-            questionText: "Swiftのプロトコルは何を定義するためのものですか？", choices: [],
-            correctAnswer: "仕様や契約"),
+        Question(questionText: "Swiftの変数を宣言するキーワードは？", choices: ["var", "let", "const", "def"], correctAnswer: "var"),
+        Question(questionText: "Swiftで定数を宣言するキーワードは？", choices: ["var", "let", "static", "const"], correctAnswer: "let"),
+        Question(questionText: "Swiftのプロトコルは何を定義するためのものですか？", choices: [], correctAnswer: "仕様や契約")
     ])
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             VStack {
                 if let question = viewModel.currentQuestion {
                     Text(question.questionText)
