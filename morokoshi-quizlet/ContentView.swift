@@ -35,12 +35,13 @@ class QuizViewModel: ObservableObject {
             feedbackMessage = "正解！"
             questionQueue.removeFirst()
         } else {
-            feedbackMessage = "不正解！\nあなたの答えは：\(answer)\n正しい答えは: \(currentQuestion.correctAnswer)"
+            feedbackMessage =
+                "不正解！\nあなたの答えは：\(answer)\n正しい答えは: \(currentQuestion.correctAnswer)"
             questionQueue.append(questionQueue.removeFirst())
         }
         nextQuestion()
     }
-    
+
     func nextQuestion() {
         userInput = ""
         showMultipleChoice.toggle()
@@ -49,13 +50,19 @@ class QuizViewModel: ObservableObject {
 
 struct QuizView: View {
     @StateObject private var viewModel = QuizViewModel(questions: [
-        Question(questionText: "Swiftの変数を宣言するキーワードは？", choices: ["var", "let", "const", "def"], correctAnswer: "var"),
-        Question(questionText: "Swiftで定数を宣言するキーワードは？", choices: ["var", "let", "static", "const"], correctAnswer: "let"),
-        Question(questionText: "Swiftのプロトコルは何を定義するためのものですか？", choices: [], correctAnswer: "仕様や契約")
+        Question(
+            questionText: "Swiftの変数を宣言するキーワードは？",
+            choices: ["var", "let", "const", "def"], correctAnswer: "var"),
+        Question(
+            questionText: "Swiftで定数を宣言するキーワードは？",
+            choices: ["var", "let", "static", "const"], correctAnswer: "let"),
+        Question(
+            questionText: "Swiftのプロトコルは何を定義するためのものですか？", choices: [],
+            correctAnswer: "仕様や契約"),
     ])
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack {
                 if let question = viewModel.currentQuestion {
                     Text(question.questionText)
