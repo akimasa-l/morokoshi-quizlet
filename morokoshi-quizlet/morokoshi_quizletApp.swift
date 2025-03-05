@@ -8,10 +8,10 @@
 import SwiftUI
 
 @main
-struct morokoshi_quizletApp: App {
+struct QuizApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            QuizView()
         }
     }
 }
