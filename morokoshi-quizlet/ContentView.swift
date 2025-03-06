@@ -25,6 +25,8 @@ class QuizViewModel: ObservableObject {
     @Published var lastAnswer: String = ""
     @Published var lastCorrectAnswer: String = ""
     @Published var wasCorrect: Bool = false
+    @Published var retryInput: String = ""
+    @Published var needsRetry: Bool = false
 
     init(questions: [Question]) {
         self.questionQueue = questions.shuffled()
@@ -35,17 +37,20 @@ class QuizViewModel: ObservableObject {
     }
 
     func showFeedback(
-        question: String, answer: String, correctAnswer: String, correct: Bool
+        question: String, answer: String, correctAnswer: String, correct: Bool,
+        needsRetry: Bool = false
     ) {
         lastQuestion = question
         lastAnswer = answer
         lastCorrectAnswer = correctAnswer
         wasCorrect = correct
+        self.needsRetry = needsRetry
         isShowingFeedback = true
     }
 
     func dismissFeedback() {
         isShowingFeedback = false
+        needsRetry = false
     }
 
     func checkMultipleChoiceAnswer(_ answer: String) {
@@ -81,10 +86,10 @@ class QuizViewModel: ObservableObject {
                 correctAnswer: currentQuestion.correctAnswer, correct: true)
         } else {
             feedbackMessage = "不正解！"
-            questionQueue.append(questionQueue.removeFirst())
             showFeedback(
                 question: currentQuestion.questionText, answer: answer,
-                correctAnswer: currentQuestion.correctAnswer, correct: false)
+                correctAnswer: currentQuestion.correctAnswer, correct: false,
+                needsRetry: true)
         }
         userInput = ""
     }
@@ -179,23 +184,40 @@ struct QuizView: View {
                                 .font(.largeTitle)
                                 .bold()
                                 .foregroundColor(
-                                    viewModel.wasCorrect ? .green : .red
-                                )
-                                .padding()
+                                    viewModel.wasCorrect ? .green : .red)
                             Text("問題: \(viewModel.lastQuestion)")
                                 .font(.headline)
+                                .padding(.top, 5)
                             Text("あなたの答え: \(viewModel.lastAnswer)")
                             Text("正解: \(viewModel.lastCorrectAnswer)")
                                 .bold()
-                            Button(action: {
-                                viewModel.dismissFeedback()
-                            }) {
-                                Text("次へ")
-                                    .padding()
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(8)
-                            }.padding()
+                            if viewModel.needsRetry {
+                                TextField(
+                                    "もう一度入力してください", text: $viewModel.retryInput
+                                )
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .padding()
+                                Button(action: {
+                                    viewModel.checkInputAnswer(
+                                        viewModel.retryInput)
+                                }) {
+                                    Text("再送信")
+                                        .padding()
+                                        .background(Color.orange)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(8)
+                                }
+                            } else {
+                                Button(action: {
+                                    viewModel.dismissFeedback()
+                                }) {
+                                    Text("次へ")
+                                        .padding()
+                                        .background(Color.blue)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(8)
+                                }
+                            }
                         }
                         .padding()
                         .background(Color.white)
