@@ -38,9 +38,10 @@ class QuizViewModel: ObservableObject {
         lastCorrectAnswer = correctAnswer
         wasCorrect = correct
         isShowingFeedback = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            self.isShowingFeedback = false
-        }
+    }
+
+    func dismissFeedback() {
+        isShowingFeedback = false
     }
 
     func checkMultipleChoiceAnswer(_ answer: String) {
@@ -51,11 +52,15 @@ class QuizViewModel: ObservableObject {
             currentQuestion.multipleChoiceCorrect = true
             questionQueue.removeFirst()
             questionQueue.append(currentQuestion)
-            showFeedback(answer: answer, correctAnswer: currentQuestion.correctAnswer, correct: true)
+            showFeedback(
+                answer: answer, correctAnswer: currentQuestion.correctAnswer,
+                correct: true)
         } else {
             feedbackMessage = "不正解！"
             questionQueue.append(questionQueue.removeFirst())
-            showFeedback(answer: answer, correctAnswer: currentQuestion.correctAnswer, correct: false)
+            showFeedback(
+                answer: answer, correctAnswer: currentQuestion.correctAnswer,
+                correct: false)
         }
         userInput = ""
     }
@@ -67,11 +72,15 @@ class QuizViewModel: ObservableObject {
             feedbackMessage = "正解！"
             completedQuestions.append(currentQuestion)
             questionQueue.removeFirst()
-            showFeedback(answer: answer, correctAnswer: currentQuestion.correctAnswer, correct: true)
+            showFeedback(
+                answer: answer, correctAnswer: currentQuestion.correctAnswer,
+                correct: true)
         } else {
             feedbackMessage = "不正解！"
             questionQueue.append(questionQueue.removeFirst())
-            showFeedback(answer: answer, correctAnswer: currentQuestion.correctAnswer, correct: false)
+            showFeedback(
+                answer: answer, correctAnswer: currentQuestion.correctAnswer,
+                correct: false)
         }
         userInput = ""
     }
@@ -98,8 +107,10 @@ struct QuizView: View {
                         .font(.title)
                         .padding()
 
-                    if !question.multipleChoiceCorrect && !question.choices.isEmpty {
-                        ForEach(question.choices, id: \ .self) { choice in
+                    if !question.multipleChoiceCorrect
+                        && !question.choices.isEmpty
+                    {
+                        ForEach(question.choices, id: \.self) { choice in
                             Button(action: {
                                 viewModel.checkMultipleChoiceAnswer(choice)
                             }) {
@@ -112,16 +123,15 @@ struct QuizView: View {
                         }
                     } else {
                         #if os(macOS)
-                        TextField("答えを入力してください", text: $viewModel.userInput)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .padding()
+                            TextField("答えを入力してください", text: $viewModel.userInput)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .padding()
                         #else
-                        TextField("答えを入力してください", text: $viewModel.userInput)
-                            .autocapitalization(.none)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .padding()
+                            TextField("答えを入力してください", text: $viewModel.userInput)
+                                .autocapitalization(.none)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .padding()
                         #endif
-                           
                         Button(action: {
                             viewModel.checkInputAnswer(viewModel.userInput)
                         }) {
@@ -138,7 +148,9 @@ struct QuizView: View {
                         .padding()
                     ScrollView {
                         LazyVStack {
-                            ForEach(viewModel.completedQuestions, id: \ .questionText) { question in
+                            ForEach(
+                                viewModel.completedQuestions, id: \.questionText
+                            ) { question in
                                 VStack(alignment: .leading) {
                                     Text(question.questionText)
                                         .font(.headline)
@@ -162,13 +174,22 @@ struct QuizView: View {
                             Text(viewModel.wasCorrect ? "⭕ 正解！" : "❌ 不正解！")
                                 .font(.largeTitle)
                                 .bold()
-                                .foregroundColor(viewModel.wasCorrect ? .green : .red)
-                            
+                                .foregroundColor(
+                                    viewModel.wasCorrect ? .green : .red
+                                )
+                                .padding()
                             Text("あなたの答え: \(viewModel.lastAnswer)")
-                                .foregroundColor(.black)
                             Text("正解: \(viewModel.lastCorrectAnswer)")
-                                .foregroundColor(.black)
                                 .bold()
+                            Button(action: {
+                                viewModel.dismissFeedback()
+                            }) {
+                                Text("次へ")
+                                    .padding()
+                                    .background(Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(8)
+                            }.padding()
                         }
                         .padding()
                         .background(Color.white)
