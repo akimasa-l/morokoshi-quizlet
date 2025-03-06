@@ -20,6 +20,10 @@ class QuizViewModel: ObservableObject {
     @Published var userInput: String = ""
     @Published var score: Int = 0
     @Published var feedbackMessage: String = ""
+    @Published var isShowingFeedback: Bool = false
+    @Published var lastAnswer: String = ""
+    @Published var lastCorrectAnswer: String = ""
+    @Published var wasCorrect: Bool = false
 
     init(questions: [Question]) {
         self.questionQueue = questions.shuffled()
@@ -27,6 +31,16 @@ class QuizViewModel: ObservableObject {
 
     var currentQuestion: Question? {
         return questionQueue.first
+    }
+
+    func showFeedback(answer: String, correctAnswer: String, correct: Bool) {
+        lastAnswer = answer
+        lastCorrectAnswer = correctAnswer
+        wasCorrect = correct
+        isShowingFeedback = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            self.isShowingFeedback = false
+        }
     }
 
     func checkMultipleChoiceAnswer(_ answer: String) {
@@ -37,9 +51,11 @@ class QuizViewModel: ObservableObject {
             currentQuestion.multipleChoiceCorrect = true
             questionQueue.removeFirst()
             questionQueue.append(currentQuestion)
+            showFeedback(answer: answer, correctAnswer: currentQuestion.correctAnswer, correct: true)
         } else {
-            feedbackMessage = "不正解！\nあなたの答えは：\(answer)\n正しい答えは: \(currentQuestion.correctAnswer)"
+            feedbackMessage = "不正解！"
             questionQueue.append(questionQueue.removeFirst())
+            showFeedback(answer: answer, correctAnswer: currentQuestion.correctAnswer, correct: false)
         }
         userInput = ""
     }
@@ -51,9 +67,11 @@ class QuizViewModel: ObservableObject {
             feedbackMessage = "正解！"
             completedQuestions.append(currentQuestion)
             questionQueue.removeFirst()
+            showFeedback(answer: answer, correctAnswer: currentQuestion.correctAnswer, correct: true)
         } else {
-            feedbackMessage = "不正解！\nあなたの答えは：\(answer)\n正しい答えは: \(currentQuestion.correctAnswer)"
+            feedbackMessage = "不正解！"
             questionQueue.append(questionQueue.removeFirst())
+            showFeedback(answer: answer, correctAnswer: currentQuestion.correctAnswer, correct: false)
         }
         userInput = ""
     }
@@ -93,10 +111,17 @@ struct QuizView: View {
                             .cornerRadius(8)
                         }
                     } else {
+                        #if os(macOS)
                         TextField("答えを入力してください", text: $viewModel.userInput)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .autocapitalization(.none)
                             .padding()
+                        #else
+                        TextField("答えを入力してください", text: $viewModel.userInput)
+                            .autocapitalization(.none)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .padding()
+                        #endif
+                           
                         Button(action: {
                             viewModel.checkInputAnswer(viewModel.userInput)
                         }) {
@@ -107,10 +132,6 @@ struct QuizView: View {
                         .foregroundColor(.white)
                         .cornerRadius(8)
                     }
-                    Text(viewModel.feedbackMessage)
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(.red)
-                        .padding()
                 } else {
                     Text("復習セクション")
                         .font(.title)
@@ -134,6 +155,29 @@ struct QuizView: View {
                 }
                 Spacer()
             }
+            .overlay(
+                VStack {
+                    if viewModel.isShowingFeedback {
+                        VStack {
+                            Text(viewModel.wasCorrect ? "⭕ 正解！" : "❌ 不正解！")
+                                .font(.largeTitle)
+                                .bold()
+                                .foregroundColor(viewModel.wasCorrect ? .green : .red)
+                            
+                            Text("あなたの答え: \(viewModel.lastAnswer)")
+                                .foregroundColor(.black)
+                            Text("正解: \(viewModel.lastCorrectAnswer)")
+                                .foregroundColor(.black)
+                                .bold()
+                        }
+                        .padding()
+                        .background(Color.white)
+                        .cornerRadius(10)
+                        .shadow(radius: 10)
+                        .transition(.opacity)
+                    }
+                }
+            )
             .navigationTitle("学習モード")
             .padding()
         }
