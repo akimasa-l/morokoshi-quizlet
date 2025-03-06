@@ -93,6 +93,16 @@ class QuizViewModel: ObservableObject {
         }
         userInput = ""
     }
+
+    func checkRetryInputAnswer(_ answer: String) {
+        if answer.lowercased() == lastCorrectAnswer.lowercased() {
+            score += 1
+            feedbackMessage = "正解！"
+            dismissFeedback()
+        } else {
+            feedbackMessage = "不正解！ もう一度試してください"
+        }
+    }
 }
 
 struct QuizView: View {
@@ -198,7 +208,7 @@ struct QuizView: View {
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .padding()
                                 Button(action: {
-                                    viewModel.checkInputAnswer(
+                                    viewModel.checkRetryInputAnswer(
                                         viewModel.retryInput)
                                 }) {
                                     Text("再送信")
