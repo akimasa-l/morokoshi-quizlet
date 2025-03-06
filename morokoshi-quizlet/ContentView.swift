@@ -21,6 +21,7 @@ class QuizViewModel: ObservableObject {
     @Published var score: Int = 0
     @Published var feedbackMessage: String = ""
     @Published var isShowingFeedback: Bool = false
+    @Published var lastQuestion: String = ""
     @Published var lastAnswer: String = ""
     @Published var lastCorrectAnswer: String = ""
     @Published var wasCorrect: Bool = false
@@ -33,7 +34,10 @@ class QuizViewModel: ObservableObject {
         return questionQueue.first
     }
 
-    func showFeedback(answer: String, correctAnswer: String, correct: Bool) {
+    func showFeedback(
+        question: String, answer: String, correctAnswer: String, correct: Bool
+    ) {
+        lastQuestion = question
         lastAnswer = answer
         lastCorrectAnswer = correctAnswer
         wasCorrect = correct
@@ -53,14 +57,14 @@ class QuizViewModel: ObservableObject {
             questionQueue.removeFirst()
             questionQueue.append(currentQuestion)
             showFeedback(
-                answer: answer, correctAnswer: currentQuestion.correctAnswer,
-                correct: true)
+                question: currentQuestion.questionText, answer: answer,
+                correctAnswer: currentQuestion.correctAnswer, correct: true)
         } else {
             feedbackMessage = "不正解！"
             questionQueue.append(questionQueue.removeFirst())
             showFeedback(
-                answer: answer, correctAnswer: currentQuestion.correctAnswer,
-                correct: false)
+                question: currentQuestion.questionText, answer: answer,
+                correctAnswer: currentQuestion.correctAnswer, correct: false)
         }
         userInput = ""
     }
@@ -73,14 +77,14 @@ class QuizViewModel: ObservableObject {
             completedQuestions.append(currentQuestion)
             questionQueue.removeFirst()
             showFeedback(
-                answer: answer, correctAnswer: currentQuestion.correctAnswer,
-                correct: true)
+                question: currentQuestion.questionText, answer: answer,
+                correctAnswer: currentQuestion.correctAnswer, correct: true)
         } else {
             feedbackMessage = "不正解！"
             questionQueue.append(questionQueue.removeFirst())
             showFeedback(
-                answer: answer, correctAnswer: currentQuestion.correctAnswer,
-                correct: false)
+                question: currentQuestion.questionText, answer: answer,
+                correctAnswer: currentQuestion.correctAnswer, correct: false)
         }
         userInput = ""
     }
@@ -178,6 +182,8 @@ struct QuizView: View {
                                     viewModel.wasCorrect ? .green : .red
                                 )
                                 .padding()
+                            Text("問題: \(viewModel.lastQuestion)")
+                                .font(.headline)
                             Text("あなたの答え: \(viewModel.lastAnswer)")
                             Text("正解: \(viewModel.lastCorrectAnswer)")
                                 .bold()
