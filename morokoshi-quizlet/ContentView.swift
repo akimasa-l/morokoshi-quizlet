@@ -7,6 +7,11 @@
 
 import SwiftUI
 
+enum FocusTextFields: Hashable {
+    case question
+    case retry
+}
+
 struct Question {
     let questionText: String
     let choices: [String]
@@ -117,6 +122,7 @@ class QuizViewModel: ObservableObject {
 }
 
 struct QuizView: View {
+    @FocusState private var focusTextFields: FocusTextFields?
     @StateObject private var viewModel = QuizViewModel(questions: [
         Question(
             questionText: "Swiftの変数を宣言するキーワードは？",
@@ -159,21 +165,31 @@ struct QuizView: View {
                                 viewModel.checkInputAnswer(
                                     viewModel.userInput)
 
-                            }
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .padding()
+                                if viewModel.isShowingFeedback {
+                                    focusTextFields = .retry
+                                }
+                            }.focused($focusTextFields, equals: .question)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .padding()
                         #else
                             TextField("答えを入力してください", text: $viewModel.userInput)
                             {
                                 viewModel.checkInputAnswer(
                                     viewModel.userInput)
+                                if viewModel.isShowingFeedback {
+                                    focusTextFields = .retry
+                                }
                             }
+                            .focused($focusTextFields, equals: .question)
                             .autocapitalization(.none)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .padding()
                         #endif
                         Button(action: {
                             viewModel.checkInputAnswer(viewModel.userInput)
+                            if viewModel.isShowingFeedback {
+                                focusTextFields = .retry
+                            }
                         }) {
                             Text("送信")
                                 .padding()
@@ -245,7 +261,12 @@ struct QuizView: View {
                                     ) {
                                         viewModel.checkRetryInputAnswer(
                                             viewModel.retryInput)
+                                        if viewModel.isRetryCorrect {
+                                            focusTextFields = nil
+                                        }
+
                                     }
+                                    .focused($focusTextFields, equals: .retry)
                                     .textFieldStyle(
                                         RoundedBorderTextFieldStyle()
                                     )
@@ -257,7 +278,11 @@ struct QuizView: View {
                                     ) {
                                         viewModel.checkRetryInputAnswer(
                                             viewModel.retryInput)
+                                        if viewModel.isRetryCorrect {
+                                            focusTextFields = nil
+                                        }
                                     }
+                                    .focused($focusTextFields, equals: .retry)
                                     .autocapitalization(.none)
                                     .textFieldStyle(
                                         RoundedBorderTextFieldStyle()
