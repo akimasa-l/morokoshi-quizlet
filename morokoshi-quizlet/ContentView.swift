@@ -19,13 +19,14 @@ class QuizViewModel: ObservableObject {
     @Published var completedQuestions: [Question] = []
     @Published var userInput: String = ""
     @Published var score: Int = 0
-    @Published var feedbackMessage: String = ""
     @Published var isShowingFeedback: Bool = false
     @Published var lastQuestion: String = ""
     @Published var lastAnswer: String = ""
     @Published var lastCorrectAnswer: String = ""
     @Published var wasCorrect: Bool = false
     @Published var retryInput: String = ""
+    @Published var isRetryAnswered: Bool = false
+    @Published var isRetryCorrect: Bool = false
     @Published var needsRetry: Bool = false
 
     init(questions: [Question]) {
@@ -48,8 +49,17 @@ class QuizViewModel: ObservableObject {
         isShowingFeedback = true
     }
 
+    func updateFeedback(answer: String, correct: Bool) {
+        lastAnswer = answer
+        isRetryCorrect = correct
+        isShowingFeedback = true
+    }
+
     func dismissFeedback() {
         isShowingFeedback = false
+        isRetryAnswered = false
+        isRetryCorrect = false
+        wasCorrect = false
         needsRetry = false
     }
 
@@ -57,7 +67,6 @@ class QuizViewModel: ObservableObject {
         guard var currentQuestion = currentQuestion else { return }
         if answer.lowercased() == currentQuestion.correctAnswer.lowercased() {
             score += 1
-            feedbackMessage = "正解！"
             currentQuestion.multipleChoiceCorrect = true
             questionQueue.removeFirst()
             questionQueue.append(currentQuestion)
@@ -65,7 +74,6 @@ class QuizViewModel: ObservableObject {
                 question: currentQuestion.questionText, answer: answer,
                 correctAnswer: currentQuestion.correctAnswer, correct: true)
         } else {
-            feedbackMessage = "不正解！"
             questionQueue.append(questionQueue.removeFirst())
             showFeedback(
                 question: currentQuestion.questionText, answer: answer,
@@ -78,14 +86,12 @@ class QuizViewModel: ObservableObject {
         guard let currentQuestion = currentQuestion else { return }
         if answer.lowercased() == currentQuestion.correctAnswer.lowercased() {
             score += 1
-            feedbackMessage = "正解！"
             completedQuestions.append(currentQuestion)
             questionQueue.removeFirst()
             showFeedback(
                 question: currentQuestion.questionText, answer: answer,
                 correctAnswer: currentQuestion.correctAnswer, correct: true)
         } else {
-            feedbackMessage = "不正解！"
             showFeedback(
                 question: currentQuestion.questionText, answer: answer,
                 correctAnswer: currentQuestion.correctAnswer, correct: false,
@@ -95,12 +101,17 @@ class QuizViewModel: ObservableObject {
     }
 
     func checkRetryInputAnswer(_ answer: String) {
+        isRetryAnswered = true
         if answer.lowercased() == lastCorrectAnswer.lowercased() {
             score += 1
-            feedbackMessage = "正解！"
-            dismissFeedback()
+            updateFeedback(answer: retryInput, correct: true)
+            retryInput = ""
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                self.dismissFeedback()
+            }
         } else {
-            feedbackMessage = "不正解！ もう一度試してください"
+            updateFeedback(answer: retryInput, correct: false)
+            retryInput = ""
         }
     }
 }
@@ -142,14 +153,24 @@ struct QuizView: View {
                         }
                     } else {
                         #if os(macOS)
-                            TextField("答えを入力してください", text: $viewModel.userInput)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .padding()
+                            TextField(
+                                "答えを入力してください", text: $viewModel.userInput
+                            ) {
+                                viewModel.checkInputAnswer(
+                                    viewModel.userInput)
+
+                            }
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .padding()
                         #else
                             TextField("答えを入力してください", text: $viewModel.userInput)
-                                .autocapitalization(.none)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .padding()
+                            {
+                                viewModel.checkInputAnswer(
+                                    viewModel.userInput)
+                            }
+                            .autocapitalization(.none)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .padding()
                         #endif
                         Button(action: {
                             viewModel.checkInputAnswer(viewModel.userInput)
@@ -190,11 +211,25 @@ struct QuizView: View {
                 VStack {
                     if viewModel.isShowingFeedback {
                         VStack {
-                            Text(viewModel.wasCorrect ? "⭕ 正解！" : "❌ 不正解！")
+                            if !viewModel.isRetryAnswered {
+                                Text(
+                                    viewModel.wasCorrect
+                                        ? "⭕ 正解！" : "❌ 不正解！ もう一度試してください"
+                                )
                                 .font(.largeTitle)
                                 .bold()
                                 .foregroundColor(
                                     viewModel.wasCorrect ? .green : .red)
+                            } else {
+                                Text(
+                                    viewModel.isRetryCorrect
+                                        ? "⭕ 正解！その調子です！" : "❌ 不正解！ もう一度試してください"
+                                )
+                                .font(.largeTitle)
+                                .bold()
+                                .foregroundColor(
+                                    viewModel.isRetryCorrect ? .green : .red)
+                            }
                             Text("問題: \(viewModel.lastQuestion)")
                                 .font(.headline)
                                 .padding(.top, 5)
@@ -202,11 +237,33 @@ struct QuizView: View {
                             Text("正解: \(viewModel.lastCorrectAnswer)")
                                 .bold()
                             if viewModel.needsRetry {
-                                TextField(
-                                    "もう一度入力してください", text: $viewModel.retryInput
-                                )
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .padding()
+
+                                #if os(macOS)
+                                    TextField(
+                                        "もう一度入力してください",
+                                        text: $viewModel.retryInput
+                                    ) {
+                                        viewModel.checkRetryInputAnswer(
+                                            viewModel.retryInput)
+                                    }
+                                    .textFieldStyle(
+                                        RoundedBorderTextFieldStyle()
+                                    )
+                                    .padding()
+                                #else
+                                    TextField(
+                                        "もう一度入力してください",
+                                        text: $viewModel.retryInput
+                                    ) {
+                                        viewModel.checkRetryInputAnswer(
+                                            viewModel.retryInput)
+                                    }
+                                    .autocapitalization(.none)
+                                    .textFieldStyle(
+                                        RoundedBorderTextFieldStyle()
+                                    )
+                                    .padding()
+                                #endif
                                 Button(action: {
                                     viewModel.checkRetryInputAnswer(
                                         viewModel.retryInput)
