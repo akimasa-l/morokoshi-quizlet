@@ -40,7 +40,8 @@ enum FocusTextFields: Hashable {
     case retry
 }
 
-struct Question: Hashable {
+struct Question: Hashable{
+    let id = UUID()
     let questionText: String
     let choices: [String]
     let correctAnswer: String
@@ -164,6 +165,8 @@ struct QuizView: View {
     @FocusState private var focusTextFields: FocusTextFields?
     @ObservedObject var viewModel: QuizViewModel
     @Binding var isCompleted: QuestionStatus
+    @Binding var isPresented: Bool
+    @Binding var isNextPresented: Bool
 
     var body: some View {
         if let question = viewModel.currentQuestion {
@@ -355,6 +358,19 @@ struct QuizView: View {
                     }
                     .padding()
                 }
+                Button(action: {
+                    isPresented = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        isNextPresented = true
+                    }
+                    print("次！！")
+                }) {
+                    Text("次へ進む")
+                        .padding()
+                }
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(8)
                 Spacer()
             }.onAppear {
                 isCompleted.markAsCompleted()
