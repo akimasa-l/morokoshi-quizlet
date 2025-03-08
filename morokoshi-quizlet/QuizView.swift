@@ -136,191 +136,189 @@ struct QuizView: View {
     ])
 
     var body: some View {
-        NavigationStack {
-            VStack {
-                if let question = viewModel.currentQuestion {
-                    Text(question.questionText)
-                        .font(.title)
-                        .padding()
+        VStack {
+            if let question = viewModel.currentQuestion {
+                Text(question.questionText)
+                    .font(.title)
+                    .padding()
 
-                    if !question.multipleChoiceCorrect
-                        && !question.choices.isEmpty
-                    {
-                        ForEach(question.choices, id: \.self) { choice in
-                            Button(action: {
-                                viewModel.checkMultipleChoiceAnswer(choice)
-                            }) {
-                                Text(choice)
-                                    .padding()
-                            }
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                        }
-                    } else {
-                        #if os(macOS)
-                            TextField(
-                                "答えを入力してください", text: $viewModel.userInput
-                            ) {
-                                viewModel.checkInputAnswer(
-                                    viewModel.userInput)
-
-                                if viewModel.isShowingFeedback {
-                                    focusTextFields = .retry
-                                }
-                            }.focused($focusTextFields, equals: .question)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .padding()
-                        #else
-                            TextField("答えを入力してください", text: $viewModel.userInput)
-                            {
-                                viewModel.checkInputAnswer(
-                                    viewModel.userInput)
-                                if viewModel.isShowingFeedback {
-                                    focusTextFields = .retry
-                                }
-                            }
-                            .focused($focusTextFields, equals: .question)
-                            .autocapitalization(.none)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .padding()
-                        #endif
+                if !question.multipleChoiceCorrect
+                    && !question.choices.isEmpty
+                {
+                    ForEach(question.choices, id: \.self) { choice in
                         Button(action: {
-                            viewModel.checkInputAnswer(viewModel.userInput)
-                            if viewModel.isShowingFeedback {
-                                focusTextFields = .retry
-                            }
+                            viewModel.checkMultipleChoiceAnswer(choice)
                         }) {
-                            Text("送信")
+                            Text(choice)
                                 .padding()
                         }
-                        .background(Color.green)
+                        .background(Color.blue)
                         .foregroundColor(.white)
                         .cornerRadius(8)
                     }
                 } else {
-                    Text("復習セクション")
-                        .font(.title)
-                        .padding()
-                    ScrollView {
-                        LazyVStack {
-                            ForEach(
-                                viewModel.completedQuestions, id: \.questionText
-                            ) { question in
-                                VStack(alignment: .leading) {
-                                    Text(question.questionText)
-                                        .font(.headline)
-                                    Text("正解: \(question.correctAnswer)")
-                                        .foregroundColor(.gray)
-                                }
-                                .padding()
-                                .background(Color.yellow.opacity(0.3))
-                                .cornerRadius(10)
+                    #if os(macOS)
+                        TextField(
+                            "答えを入力してください", text: $viewModel.userInput
+                        ) {
+                            viewModel.checkInputAnswer(
+                                viewModel.userInput)
+
+                            if viewModel.isShowingFeedback {
+                                focusTextFields = .retry
+                            }
+                        }.focused($focusTextFields, equals: .question)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .padding()
+                    #else
+                        TextField("答えを入力してください", text: $viewModel.userInput) {
+                            viewModel.checkInputAnswer(
+                                viewModel.userInput)
+                            if viewModel.isShowingFeedback {
+                                focusTextFields = .retry
                             }
                         }
+                        .focused($focusTextFields, equals: .question)
+                        .autocapitalization(.none)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
                         .padding()
+                    #endif
+                    Button(action: {
+                        viewModel.checkInputAnswer(viewModel.userInput)
+                        if viewModel.isShowingFeedback {
+                            focusTextFields = .retry
+                        }
+                    }) {
+                        Text("送信")
+                            .padding()
                     }
+                    .background(Color.green)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
                 }
-                Spacer()
-            }
-            .overlay(
-                VStack {
-                    if viewModel.isShowingFeedback {
-                        VStack {
-                            if !viewModel.isRetryAnswered {
-                                Text(
-                                    viewModel.wasCorrect
-                                        ? "⭕ 正解！" : "❌ 不正解！ もう一度試してください"
-                                )
-                                .font(.largeTitle)
-                                .bold()
-                                .foregroundColor(
-                                    viewModel.wasCorrect ? .green : .red)
-                            } else {
-                                Text(
-                                    viewModel.isRetryCorrect
-                                        ? "⭕ 正解！その調子です！" : "❌ 不正解！ もう一度試してください"
-                                )
-                                .font(.largeTitle)
-                                .bold()
-                                .foregroundColor(
-                                    viewModel.isRetryCorrect ? .green : .red)
+            } else {
+                Text("復習セクション")
+                    .font(.title)
+                    .padding()
+                ScrollView {
+                    LazyVStack {
+                        ForEach(
+                            viewModel.completedQuestions, id: \.questionText
+                        ) { question in
+                            VStack(alignment: .leading) {
+                                Text(question.questionText)
+                                    .font(.headline)
+                                Text("正解: \(question.correctAnswer)")
+                                    .foregroundColor(.gray)
                             }
-                            Text("問題: \(viewModel.lastQuestion)")
-                                .font(.headline)
-                                .padding(.top, 5)
-                            Text("あなたの答え: \(viewModel.lastAnswer)")
-                            Text("正解: \(viewModel.lastCorrectAnswer)")
-                                .bold()
-                            if viewModel.needsRetry {
+                            .padding()
+                            .background(Color.yellow.opacity(0.3))
+                            .cornerRadius(10)
+                        }
+                    }
+                    .padding()
+                }
+            }
+            Spacer()
+        }
+        .overlay(
+            VStack {
+                if viewModel.isShowingFeedback {
+                    VStack {
+                        if !viewModel.isRetryAnswered {
+                            Text(
+                                viewModel.wasCorrect
+                                    ? "⭕ 正解！" : "❌ 不正解！ もう一度試してください"
+                            )
+                            .font(.largeTitle)
+                            .bold()
+                            .foregroundColor(
+                                viewModel.wasCorrect ? .green : .red)
+                        } else {
+                            Text(
+                                viewModel.isRetryCorrect
+                                    ? "⭕ 正解！その調子です！" : "❌ 不正解！ もう一度試してください"
+                            )
+                            .font(.largeTitle)
+                            .bold()
+                            .foregroundColor(
+                                viewModel.isRetryCorrect ? .green : .red)
+                        }
+                        Text("問題: \(viewModel.lastQuestion)")
+                            .font(.headline)
+                            .padding(.top, 5)
+                        Text("あなたの答え: \(viewModel.lastAnswer)")
+                        Text("正解: \(viewModel.lastCorrectAnswer)")
+                            .bold()
+                        if viewModel.needsRetry {
 
-                                #if os(macOS)
-                                    TextField(
-                                        "もう一度入力してください",
-                                        text: $viewModel.retryInput
-                                    ) {
-                                        viewModel.checkRetryInputAnswer(
-                                            viewModel.retryInput)
-                                        if viewModel.isRetryCorrect {
-                                            focusTextFields = nil
-                                        }
-
-                                    }
-                                    .focused($focusTextFields, equals: .retry)
-                                    .textFieldStyle(
-                                        RoundedBorderTextFieldStyle()
-                                    )
-                                    .padding()
-                                #else
-                                    TextField(
-                                        "もう一度入力してください",
-                                        text: $viewModel.retryInput
-                                    ) {
-                                        viewModel.checkRetryInputAnswer(
-                                            viewModel.retryInput)
-                                        if viewModel.isRetryCorrect {
-                                            focusTextFields = nil
-                                        }
-                                    }
-                                    .focused($focusTextFields, equals: .retry)
-                                    .autocapitalization(.none)
-                                    .textFieldStyle(
-                                        RoundedBorderTextFieldStyle()
-                                    )
-                                    .padding()
-                                #endif
-                                Button(action: {
+                            #if os(macOS)
+                                TextField(
+                                    "もう一度入力してください",
+                                    text: $viewModel.retryInput
+                                ) {
                                     viewModel.checkRetryInputAnswer(
                                         viewModel.retryInput)
-                                }) {
-                                    Text("再送信")
-                                        .padding()
-                                        .background(Color.orange)
-                                        .foregroundColor(.white)
-                                        .cornerRadius(8)
+                                    if viewModel.isRetryCorrect {
+                                        focusTextFields = nil
+                                    }
+
                                 }
-                            } else {
-                                Button(action: {
-                                    viewModel.dismissFeedback()
-                                }) {
-                                    Text("次へ")
-                                        .padding()
-                                        .background(Color.blue)
-                                        .foregroundColor(.white)
-                                        .cornerRadius(8)
+                                .focused($focusTextFields, equals: .retry)
+                                .textFieldStyle(
+                                    RoundedBorderTextFieldStyle()
+                                )
+                                .padding()
+                            #else
+                                TextField(
+                                    "もう一度入力してください",
+                                    text: $viewModel.retryInput
+                                ) {
+                                    viewModel.checkRetryInputAnswer(
+                                        viewModel.retryInput)
+                                    if viewModel.isRetryCorrect {
+                                        focusTextFields = nil
+                                    }
                                 }
+                                .focused($focusTextFields, equals: .retry)
+                                .autocapitalization(.none)
+                                .textFieldStyle(
+                                    RoundedBorderTextFieldStyle()
+                                )
+                                .padding()
+                            #endif
+                            Button(action: {
+                                viewModel.checkRetryInputAnswer(
+                                    viewModel.retryInput)
+                            }) {
+                                Text("再送信")
+                                    .padding()
+                                    .background(Color.orange)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(8)
+                            }
+                        } else {
+                            Button(action: {
+                                viewModel.dismissFeedback()
+                            }) {
+                                Text("次へ")
+                                    .padding()
+                                    .background(Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(8)
                             }
                         }
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(10)
-                        .shadow(radius: 10)
-                        .transition(.opacity)
                     }
+                    .padding()
+                    .background(Color.white)
+                    .cornerRadius(10)
+                    .shadow(radius: 10)
+                    .transition(.opacity)
                 }
-            )
-            .navigationTitle("学習モード")
-            .padding()
-        }
+            }
+        )
+        .navigationTitle("学習モード")
+        .padding()
+
     }
 }
