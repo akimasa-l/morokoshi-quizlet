@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  QuizView.swift
 //  morokoshi-quizlet
 //
 //  Created by 劉明正 on 2025/01/24.
