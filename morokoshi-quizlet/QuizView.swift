@@ -12,11 +12,12 @@ enum FocusTextFields: Hashable {
     case retry
 }
 
-struct Question {
+struct Question: Hashable {
     let questionText: String
     let choices: [String]
     let correctAnswer: String
     var multipleChoiceCorrect: Bool = false
+    var isCompleted: Bool = false
 }
 
 class QuizViewModel: ObservableObject {
@@ -83,6 +84,7 @@ class QuizViewModel: ObservableObject {
             showFeedback(
                 question: currentQuestion.questionText, answer: answer,
                 correctAnswer: currentQuestion.correctAnswer, correct: false)
+            currentQuestion.isCompleted = true
         }
         userInput = ""
     }
@@ -320,5 +322,40 @@ struct QuizView: View {
         .navigationTitle("学習モード")
         .padding()
 
+    }
+}
+
+struct QuestionListView: View {
+    @StateObject private var viewModel = QuizViewModel(questions: [
+        Question(
+            questionText: "Swiftの変数を宣言するキーワードは？",
+            choices: ["var", "let", "const", "def"], correctAnswer: "var"),
+        Question(
+            questionText: "Swiftで定数を宣言するキーワードは？",
+            choices: ["var", "let", "static", "const"], correctAnswer: "let"),
+        Question(
+            questionText: "Swiftのプロトコルは何を定義するためのものですか？", choices: [],
+            correctAnswer: "仕様や契約"),
+    ])
+    @State private var isQuizActive = false
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(viewModel.questionQueue, id: \.self) { question in
+
+                    NavigationLink(destination: QuizView()) {
+                        HStack {
+                            Text(question.questionText)
+                            Spacer()
+                            Text(question.isCompleted ? "✅" : "❌")
+                                .foregroundColor(
+                                    question.isCompleted ? .green : .red)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("問題一覧")
+        }
     }
 }

@@ -11,7 +11,7 @@ struct SettingView: View {
     var body: some View {
         NavigationStack {
             NavigationLink {
-                QuizView()
+                QuestionListView()
             } label: {
                 Text("Quizに進む")
             }
