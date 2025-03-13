@@ -18,6 +18,9 @@ struct Questions: Hashable, Identifiable, Equatable {
 }
 
 struct QuestionListView: View {
+    @Binding var currentQuestionsIndex: Int
+    @Binding var isQuestionsFinished: Bool
+    @Binding var path: NavigationPath
     @State var questionsList: [Questions] = [
         Questions(questions: [
             Question(
@@ -54,9 +57,9 @@ struct QuestionListView: View {
     var body: some View {
         List {
             ForEach(questionsList.indexed(), id: \.element) {
-                 index,questions in
+                index, questions in
                 NavigationLink(
-                    value: NavigationPathEnum.quizView(questions),
+                    value: NavigationPathEnum.quizView(questions, index: index),
                     label: {
                         HStack {
                             Text("")
@@ -69,5 +72,19 @@ struct QuestionListView: View {
             }
         }
         .navigationTitle("問題一覧")
+        .onAppear {
+            if isQuestionsFinished {
+                isQuestionsFinished = false
+                guard currentQuestionsIndex < questionsList.count - 1 else {
+                    return
+                }
+                path.append(
+                    NavigationPathEnum.quizView(
+                        questionsList[currentQuestionsIndex + 1],
+                        index: currentQuestionsIndex + 1
+                    )
+                )
+            }
+        }
     }
 }

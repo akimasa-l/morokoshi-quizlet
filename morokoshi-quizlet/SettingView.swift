@@ -10,12 +10,14 @@ import SwiftUI
 enum NavigationPathEnum: Hashable {
     case questionList
     case setting
-    case quizView(Questions)
+    case quizView(Questions, index: Int)
 
 }
 
 struct SettingView: View {
-    @State private var path: NavigationPath = NavigationPath()
+    @State var path: NavigationPath = NavigationPath()
+    @State var currentQuestionsIndex: Int = 0
+    @State var isQuestionsFinished: Bool = false
     var body: some View {
         NavigationStack(path: $path) {
             NavigationLink(
@@ -30,13 +32,23 @@ struct SettingView: View {
                     destination in
                     switch destination {
                     case .questionList:
-                        QuestionListView()
+                        QuestionListView(
+                            currentQuestionsIndex: $currentQuestionsIndex,
+                            isQuestionsFinished: $isQuestionsFinished,
+                            path: $path
+                        )
                     case .setting:
                         SettingView()
-                    case .quizView(let questions):
+                    case .quizView(let questions, let index):
                         QuizView(
                             viewModel: QuizViewModel(
-                                questions: questions.questions))
+                                questions: questions.questions),
+                            path: $path,
+                            isQuestionsFinished: $isQuestionsFinished
+                        )
+                        .onAppear {
+                            currentQuestionsIndex = index
+                        }
                     }
                 }
             )

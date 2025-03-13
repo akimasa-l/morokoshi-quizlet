@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-enum QuestionStatus: Hashable{    
+enum QuestionStatus: Hashable {
     case notStarted
     case started
     case completed
@@ -40,7 +40,7 @@ enum FocusTextFields: Hashable {
     case retry
 }
 
-struct Question: Hashable,Identifiable {
+struct Question: Hashable, Identifiable {
     let id = UUID()
     let questionText: String
     let choices: [String]
@@ -164,10 +164,12 @@ class QuizViewModel: ObservableObject {
 struct QuizView: View {
     @FocusState private var focusTextFields: FocusTextFields?
     @ObservedObject var viewModel: QuizViewModel
-//    @Binding var isCompleted: QuestionStatus
-//    @Binding var isPresented: Bool
-//    @Binding var isNextPresented: Bool
-    @State var navigationPath = NavigationPath()
+    //    @Binding var isCompleted: QuestionStatus
+    //    @Binding var isPresented: Bool
+    //    @Binding var isNextPresented: Bool
+    //    @State var navigationPath = NavigationPath()
+    @Binding var path: NavigationPath
+    @Binding var isQuestionsFinished: Bool
 
     var body: some View {
         if let question = viewModel.currentQuestion {
@@ -234,7 +236,7 @@ struct QuizView: View {
                 Spacer()
             }
             .onAppear {
-//                isCompleted.markAsStarted()
+                //                isCompleted.markAsStarted()
             }
             .overlay {
                 VStack {
@@ -375,11 +377,11 @@ struct QuizView: View {
                     .padding()
                 }
                 Button(action: {
-//                    isPresented = false
-                    na
-//                    NavigationPath().append()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-//                        isNextPresented = true
+                    //                    isPresented = false
+                    //                    NavigationPath().append()
+                    isQuestionsFinished = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        path.removeLast()
                     }
                 }) {
                     Text("次へ進む")
@@ -390,7 +392,7 @@ struct QuizView: View {
                 .cornerRadius(8)
                 Spacer()
             }.onAppear {
-//                isCompleted.markAsCompleted()
+                //                isCompleted.markAsCompleted()
             }
         }
 
